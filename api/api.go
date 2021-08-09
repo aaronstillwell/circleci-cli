@@ -903,6 +903,50 @@ mutation($name: String!) {
 	return nil
 }
 
+func DeleteNamespace(cl *graphql.Client, name string) error {
+	var response struct {
+		DeleteNamespace struct {
+			Deleted bool
+			Errors  GQLErrorsCollection
+		}
+	}
+	query := `
+mutation($id: String!) {
+  deleteNamespaceAndRelatedOrbs(namespaceId: $id) {
+    deleted
+    errors {
+      type
+      message
+    }
+  }
+}
+`
+	namespaceResponse, err := GetNamespace(cl, name)
+	if err != nil {
+		return err
+	}
+
+	request := graphql.NewRequest(query)
+	request.SetToken(cl.Token)
+
+	request.Var("id", namespaceResponse.RegistryNamespace.ID)
+
+	err = cl.Run(request, &response)
+	if err != nil {
+		return err
+	}
+
+	if len(response.DeleteNamespace.Errors) > 0 {
+		return response.DeleteNamespace.Errors
+	}
+
+	if !response.DeleteNamespace.Deleted {
+		return errors.New("Namespace deletion failed for unknown reasons.")
+	}
+
+	return nil
+}
+
 // CreateNamespace creates (reserves) a namespace for an organization
 func CreateNamespace(cl *graphql.Client, name string, organizationName string, organizationVcs string) (*CreateNamespaceResponse, error) {
 	getOrgResponse, getOrgError := getOrganization(cl, organizationName, organizationVcs)

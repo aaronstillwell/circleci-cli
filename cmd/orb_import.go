@@ -8,6 +8,7 @@ import (
 
 	"github.com/CircleCI-Public/circleci-cli/api"
 	"github.com/CircleCI-Public/circleci-cli/api/graphql"
+	"github.com/pkg/errors"
 )
 
 type orbImportPlan struct {
@@ -200,4 +201,43 @@ func displayPlan(w io.Writer, plan orbImportPlan) {
 
 func isNamespace(ref string) bool {
 	return len(strings.Split(ref, "/")) == 1
+}
+
+func deleteNamespace(nsOpts namespaceOptions) error {
+	if len(nsOpts.args) == 0 {
+		return errors.New("Namespace name must be provided")
+	}
+	namespaceArg := nsOpts.args[0]
+	ok, err := api.NamespaceExists(nsOpts.cl, namespaceArg)
+	if err != nil {
+		return fmt.Errorf("namespace check failed: %s", err.Error())
+	}
+
+	if !ok {
+		return fmt.Errorf("Namespace does not exist: %s", namespaceArg)
+	}
+
+	// This will not support private orbs in current functionality. Refactor for dyanamic private/public status once private orbs are supported for server.
+	orbs, err := api.ListNamespaceOrbs(nsOpts.cl, namespaceArg, false)
+
+	if err != nil {
+		return fmt.Errorf("Unable to list orbs")
+	}
+
+	var b strings.Builder
+	b.WriteString("The following delete actions will be performed:\n")
+
+	b.WriteString(fmt.Sprint("  Delete namespace: '%s'\n", namespaceArg))
+	for _, o := range orbs.Orbs {
+		b.WriteString(fmt.Sprintf("  Delete orb: '%s'\n", o))
+	}
+
+	b.WriteString("\n")
+	fmt.Println(b.String())
+
+	if !nsOpts.noPrompt && !nsOpts.tty.askUserToConfirm("Are you sure you would like to proceed?") {
+		return nil
+	}
+
+	return api.DeleteNamespace(nsOpts.cl, namespaceArg)
 }

@@ -54,9 +54,7 @@ func newAdminCommand(config *settings.Config) *cobra.Command {
 		Use:   "delete-namespace-alias <name>",
 		Short: "Delete a namespace alias",
 		Long: `Delete a namespace alias.
-
 A namespace can have multiple aliases (names). This command deletes an alias left behind by a rename. The most recent alias cannot be deleted.
-
 Example:
 - namespace A is renamed to B
 - alias B is created, coexisting with alias A
@@ -82,6 +80,31 @@ Example:
 	if err := deleteAliasCommand.Flags().MarkHidden("integration-testing"); err != nil {
 		panic(err)
 	}
+
+	deleteNamespaceCommand := &cobra.Command{
+		Use:   "delete-namespace <name>",
+		Short: "Delete a namespace",
+		Long: `Delete a namespace and it's related orbs.
+
+	This command deletes a namespace, as well as any orbs that have been created in the namespace.`,
+		PreRunE: func(_ *cobra.Command, args []string) error {
+			return validateToken(nsOpts.cfg)
+		},
+		RunE: func(_ *cobra.Command, _ []string) error {
+			if nsOpts.integrationTesting {
+				nsOpts.tty = createNamespaceTestUI{
+					confirm: true,
+				}
+			}
+			return deleteNamespace(nsOpts)
+		},
+		Args:        cobra.ExactArgs(1),
+		Annotations: make(map[string]string),
+	}
+
+	deleteNamespaceCommand.Annotations["<name>"] = "The name of the namespace to delete"
+	deleteNamespaceCommand.Flags().BoolVar(&nsOpts.noPrompt, "no-prompt", false, "Disable prompt to bypass interactive UI.")
+	deleteNamespaceCommand.Flags().BoolVar(&nsOpts.integrationTesting, "integration-testing", false, "Enable test mode to bypass interactive UI.")
 
 	adminCommand := &cobra.Command{
 		Use:   "admin",
