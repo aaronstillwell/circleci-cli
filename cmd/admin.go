@@ -126,6 +126,7 @@ Example:
 	adminCommand.AddCommand(importOrbCommand)
 	adminCommand.AddCommand(renameCommand)
 	adminCommand.AddCommand(deleteAliasCommand)
+	adminCommand.AddCommand(deleteNamespaceCommand)
 
 	return adminCommand
 }

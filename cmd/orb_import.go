@@ -214,25 +214,23 @@ func deleteNamespace(nsOpts namespaceOptions) error {
 	}
 
 	if !ok {
-		return fmt.Errorf("Namespace does not exist: %s", namespaceArg)
+		return fmt.Errorf("namespace does not exist: %s", namespaceArg)
 	}
 
 	// This will not support private orbs in current functionality. Refactor for dyanamic private/public status once private orbs are supported for server.
 	orbs, err := api.ListNamespaceOrbs(nsOpts.cl, namespaceArg, false)
-
 	if err != nil {
-		return fmt.Errorf("Unable to list orbs")
+		return fmt.Errorf("unable to list orbs: %s", err.Error())
 	}
 
 	var b strings.Builder
 	b.WriteString("The following delete actions will be performed:\n")
 
-	b.WriteString(fmt.Sprint("  Delete namespace: '%s'\n", namespaceArg))
+	b.WriteString(fmt.Sprintf("  Delete namespace: '%s'\n", namespaceArg))
 	for _, o := range orbs.Orbs {
-		b.WriteString(fmt.Sprintf("  Delete orb: '%s'\n", o))
+		b.WriteString(fmt.Sprintf("  Delete orb: '%s'\n", o.Name))
 	}
 
-	b.WriteString("\n")
 	fmt.Println(b.String())
 
 	if !nsOpts.noPrompt && !nsOpts.tty.askUserToConfirm("Are you sure you would like to proceed?") {

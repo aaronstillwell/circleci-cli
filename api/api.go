@@ -911,7 +911,7 @@ func DeleteNamespace(cl *graphql.Client, name string) error {
 		}
 	}
 	query := `
-mutation($id: String!) {
+mutation($id: UUID!) {
   deleteNamespaceAndRelatedOrbs(namespaceId: $id) {
     deleted
     errors {
