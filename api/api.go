@@ -903,12 +903,12 @@ mutation($name: String!) {
 	return nil
 }
 
-func DeleteNamespace(cl *graphql.Client, name string) error {
+func DeleteNamespace(cl *graphql.Client, id string) error {
 	var response struct {
 		DeleteNamespace struct {
 			Deleted bool
 			Errors  GQLErrorsCollection
-		}
+		} `json:"deleteNamespaceAndRelatedOrbs"`
 	}
 	query := `
 mutation($id: UUID!) {
@@ -921,17 +921,11 @@ mutation($id: UUID!) {
   }
 }
 `
-	namespaceResponse, err := GetNamespace(cl, name)
-	if err != nil {
-		return err
-	}
-
 	request := graphql.NewRequest(query)
 	request.SetToken(cl.Token)
+	request.Var("id", id)
 
-	request.Var("id", namespaceResponse.RegistryNamespace.ID)
-
-	err = cl.Run(request, &response)
+	err := cl.Run(request, &response)
 	if err != nil {
 		return err
 	}
